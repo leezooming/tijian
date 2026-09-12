@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -30,11 +31,26 @@
       justify-content: space-between;
       max-width: 820px;
       margin: 0 auto;
+      gap: 12px;
     }
-    .navbar-left { display: flex; align-items: center; gap: 12px; }
+    .navbar-left { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
     .navbar-left .brand-icon { font-size: 28px; color: #ffb347; }
     .navbar-left .brand-text { font-weight: 700; font-size: 20px; letter-spacing: 1px; }
     .navbar-left .brand-sub { font-size: 12px; opacity: 0.8; font-weight: 400; margin-left: 6px; }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 179, 71, 0.18);
+      border: 1px solid rgba(255, 179, 71, 0.4);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #ffd9a0;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .navbar-right i { color: #ffb347; font-size: 13px; }
 
     .container { max-width: 820px; margin: 0 auto; padding: 16px; }
     .card {
@@ -320,6 +336,8 @@
 
     @media (max-width: 600px) {
       .navbar-left .brand-sub { display: none; }
+      .navbar-left .brand-text { font-size: 17px; }
+      .navbar-right { font-size: 11px; padding: 4px 10px; }
       .result-dept { grid-template-columns: 1fr; }
       .options { margin-left: 0; }
       .legal-tip { margin-left: 0; }
@@ -330,6 +348,15 @@
 
     .hidden { display: none !important; }
   </style>
+  <script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?820044d700fe0ccbee5564caa413a93b";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
 </head>
 <body>
 
@@ -338,6 +365,10 @@
     <div class="navbar-left">
       <span class="brand-icon"><i class="fas fa-heartbeat"></i></span>
       <span class="brand-text">检护黎商 <span class="brand-sub">· 法治体检中心</span></span>
+    </div>
+    <div class="navbar-right">
+      <i class="fas fa-info-circle"></i>
+      <span>完成全部题目后生成体检报告</span>
     </div>
   </div>
 </div>
@@ -453,7 +484,6 @@ function calcProgress() {
   return total === 0 ? 0 : Math.round((done / total) * 100);
 }
 
-// ========== 步骤条渲染（可点击跳转） ==========
 function renderSteps() {
   const container = document.getElementById('stepIndicator');
   let html = '';
@@ -475,7 +505,6 @@ function renderSteps() {
   updateProgress();
 }
 
-// ========== 跳转到指定板块 ==========
 function goToDept(idx) {
   if (idx === currentDeptIndex) return;
   currentDeptIndex = idx;
@@ -543,7 +572,6 @@ function renderQuestions() {
   });
   container.innerHTML = html;
 
-  // 按钮逻辑：最后一板块显示"生成报告"，其余显示"下一板块"；不再要求当前板块答完
   const isLast = currentDeptIndex === totalDepts - 1;
   document.getElementById('submitBtn').classList.toggle('hidden', !isLast);
   document.getElementById('nextBtn').classList.toggle('hidden', isLast);
@@ -581,16 +609,13 @@ function prevStep() {
   }
 }
 
-// ========== 生成报告编号 ==========
 function generateReportId() {
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const randomStr = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
   return `LJ-${dateStr}-${randomStr}`;
 }
 
-// ========== 提交体检（先检查全部答完） ==========
 function submitQuiz() {
-  // 收集未答完的板块
   const incompleteDepts = [];
   DEPTS.forEach((dept, idx) => {
     if (!isDeptComplete(dept.id)) {
@@ -607,7 +632,6 @@ function submitQuiz() {
     return;
   }
 
-  // 全部答完，生成报告
   currentReportId = generateReportId();
   const reportHTML = generateReport(currentReportId);
   document.getElementById('questionArea').style.display = 'none';
@@ -620,7 +644,6 @@ function submitQuiz() {
   }, 600);
 }
 
-// ========== 生成报告 HTML ==========
 function generateReport(reportId) {
   function evalDept(deptId) {
     const qs = QUESTIONS[deptId] || [];
@@ -744,7 +767,6 @@ function generateReport(reportId) {
   return html;
 }
 
-// ========== 自动生成并下载 PDF ==========
 async function downloadPDF() {
   const element = document.getElementById('resultContent');
   const btn = event && event.target ? event.target : null;
@@ -787,7 +809,6 @@ async function downloadPDF() {
   }
 }
 
-// ========== 重置 ==========
 function resetQuiz() {
   for (const key in answers) delete answers[key];
   currentDeptIndex = 0;
@@ -800,7 +821,6 @@ function resetQuiz() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 初始化
 renderDeptHeader();
 renderQuestions();
 updateProgress();
