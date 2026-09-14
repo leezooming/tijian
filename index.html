@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -8,6 +7,15 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?820044d700fe0ccbee5564caa413a93b";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -285,26 +293,73 @@
     .level-high { color: #b3362a; }
 
     .risk-item {
-      padding: 14px 16px;
+      padding: 16px 18px;
       background: #fafbfc;
       border-radius: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       border-left: 4px solid #ccc;
     }
-    .risk-item .rtop { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-    .risk-item .rtop .rtitle { font-weight: 600; font-size: 14px; }
+    .risk-item .rtop {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .risk-item .rtop .rtitle {
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 1.5;
+      flex: 1;
+      min-width: 200px;
+      color: #1a2a3a;
+    }
     .risk-item .rtop .rtag {
       font-size: 11px; font-weight: 600; padding: 2px 12px; border-radius: 20px;
+      white-space: nowrap;
     }
-    .risk-item .rdesc { font-size: 13px; color: #4a5a6e; margin: 6px 0; line-height: 1.5; }
+    .risk-item .rdept {
+      font-size: 12px;
+      color: #6b7a8f;
+      margin-bottom: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .risk-item .rchoice {
+      font-size: 13px;
+      color: #1a2a3a;
+      background: #fff;
+      border: 1px dashed #d0d7e0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .risk-item .rchoice .rchoice-label {
+      color: #6b7a8f;
+      margin-right: 6px;
+    }
+    .risk-item .rchoice .rchoice-value {
+      font-weight: 600;
+      color: #b3362a;
+    }
+    .risk-item .rdesc {
+      font-size: 13px;
+      color: #4a5a6e;
+      margin: 6px 0;
+      line-height: 1.6;
+    }
     .risk-item .rsugg {
       font-size: 13px;
       color: #0a2e5c;
       background: #e8eff8;
-      padding: 6px 12px;
+      padding: 8px 12px;
       border-radius: 6px;
-      display: inline-block;
-      margin-top: 4px;
+      display: block;
+      margin-top: 8px;
+      line-height: 1.5;
     }
     .report-meta {
       font-size: 13px;
@@ -348,15 +403,6 @@
 
     .hidden { display: none !important; }
   </style>
-  <script>
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "https://hm.baidu.com/hm.js?820044d700fe0ccbee5564caa413a93b";
-  var s = document.getElementsByTagName("script")[0]; 
-  s.parentNode.insertBefore(hm, s);
-})();
-</script>
 </head>
 <body>
 
@@ -684,6 +730,7 @@ function generateReport(reportId) {
   else if (overallPct >= 40) { overallLevel = '亚健康'; overallIcon = 'fa-meh'; overallColor = '#b8580a'; }
   else { overallLevel = '高危'; overallIcon = 'fa-frown'; overallColor = '#b3362a'; }
 
+  // ========== 收集全部风险点（完整信息） ==========
   const riskItems = [];
   const deptMap = { criminal: '刑事检察', civil: '民事检察', administrative: '行政检察', public: '公益诉讼检察' };
   DEPTS.forEach(d => {
@@ -695,15 +742,17 @@ function generateReport(reportId) {
       if (ans === total - 1 || (ans > 1 && total > 3)) {
         riskItems.push({
           dept: deptMap[d.id] || d.name,
-          title: q.text.length > 25 ? q.text.substring(0, 25) + '...' : q.text,
-          desc: '当前选项表明存在风险，建议企业对照法律规定进行整改。',
-          sugg: '请参照相关法律法规完善管理制度，必要时可申请检察官上门深度体检。',
+          deptColor: d.color,
+          fullTitle: q.text,                      // 完整问题
+          choiceText: q.options[ans],             // 用户选择的具体选项
           level: ans === total - 1 ? '高风险' : '中风险'
         });
       }
     });
   });
-  const riskShow = riskItems.slice(0, 6);
+
+  // 按风险等级排序：高风险在前
+  riskItems.sort((a, b) => (a.level === '高风险' ? -1 : 1) - (b.level === '高风险' ? -1 : 1));
 
   let html = `
     <div class="result-health">
@@ -734,19 +783,39 @@ function generateReport(reportId) {
   });
   html += `</div>`;
 
-  if (riskShow.length > 0) {
-    html += `<h4 style="margin:16px 0 8px;"><i class="fas fa-exclamation-circle"></i> 风险清单与整改建议</h4><div class="result-risk-list">`;
-    riskShow.forEach((r, idx) => {
-      const levelCls = r.level === '高风险' ? 'level-high' : 'level-mid';
+  // ========== 风险清单：完整展示 ==========
+  if (riskItems.length > 0) {
+    html += `<h4 style="margin:20px 0 10px;"><i class="fas fa-exclamation-circle"></i> 风险清单与整改建议（共 ${riskItems.length} 项）</h4>`;
+    html += `<div class="result-risk-list">`;
+    riskItems.forEach((r, idx) => {
       const bg = r.level === '高风险' ? '#fee8e6' : '#fef0e0';
+      const borderColor = r.level === '高风险' ? '#b3362a' : '#b8580a';
+      const tagColor = r.level === '高风险' ? '#b3362a' : '#b8580a';
+
       html += `
-        <div class="risk-item" style="border-left-color:${r.level === '高风险' ? '#b3362a' : '#b8580a'};background:${bg}20;">
+        <div class="risk-item" style="border-left-color:${borderColor};">
           <div class="rtop">
-            <span class="rtitle">${idx+1}. ${r.title}</span>
-            <span class="rtag" style="background:${bg};color:${r.level === '高风险' ? '#b3362a' : '#b8580a'}">${r.level}</span>
+            <span class="rtitle">${idx + 1}. ${r.fullTitle}</span>
+            <span class="rtag" style="background:${bg};color:${tagColor}">${r.level}</span>
           </div>
-          <div class="rdesc">${r.desc}</div>
-          <div class="rsugg"><i class="fas fa-prescription"></i> ${r.sugg}</div>
+          <div class="rdept">
+            <i class="fas fa-stethoscope" style="color:${r.deptColor};"></i>
+            <span>所属板块：${r.dept}</span>
+          </div>
+          <div class="rchoice">
+            <span class="rchoice-label"><i class="fas fa-hand-pointer"></i> 您的选择：</span>
+            <span class="rchoice-value">${r.choiceText}</span>
+          </div>
+          <div class="rdesc">
+            <i class="fas fa-info-circle" style="color:#8a9aae;"></i>
+            ${r.level === '高风险'
+              ? '该选项表明企业当前存在较为突出的法律风险，可能面临行政处罚、民事责任乃至刑事追究，建议尽快整改。'
+              : '该选项表明企业存在一定的法律风险隐患，建议对照相关法律规定完善管理制度，防患于未然。'}
+          </div>
+          <div class="rsugg">
+            <i class="fas fa-prescription"></i>
+            <strong>整改建议：</strong>请对照相关法律法规自查自纠，必要时可预约检察官上门深度体检，获取针对性合规指导。
+          </div>
         </div>
       `;
     });
